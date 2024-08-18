@@ -6,7 +6,7 @@ export default function Home() {
   return (
     <>
       <div>
-        <div>Hello world </div>
+        <div>Hello world - Home</div>
         <UploadForm />
         {/* <Room /> */}
       </div>
