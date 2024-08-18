@@ -16,8 +16,40 @@ const UploadForm = () => {
   };
   const handleUpload = async (file) => {
     try {
-      const formData = new FormData();
-      formData.append('file', file);
+      const chunkSize = 100 * 1024 * 1024; // 100 MB chunks
+      const totalChunks = Math.ceil(file.size / chunkSize);
+      console.log('filesize', file.size);
+      console.log('chunksize', chunkSize);
+      console.log('totalchunks', totalChunks);
+
+      // const formData = new FormData();
+      // formData.append('file', file);
+
+      let start = 0;
+      const uploadPromises = [];
+
+      for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+        const chunk = file.slice(start, start + chunkSize);
+        start += chunkSize;
+        const chunkFormData = new FormData();
+        chunkFormData.append('filename', file.name);
+        chunkFormData.append('chunk', chunk);
+        chunkFormData.append('totalChunks', totalChunks);
+        chunkFormData.append('chunkIndex', chunkIndex);
+
+        console.log('uploading chunk: ', chunkIndex + 1, 'of: ', totalChunks);
+        const res = await axios.post(
+          `${UPLOAD_URL}/uploads/upload1`,
+          chunkFormData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          }
+        );
+        console.log('response data is: ', res.data);
+      }
+
       const res = await axios.post(`${UPLOAD_URL}/uploads/upload1`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
