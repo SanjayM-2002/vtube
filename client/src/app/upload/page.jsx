@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useSession } from 'next-auth/react';
 import { redirect, useRouter } from 'next/navigation';
-
+const MAX_FILE_SIZE_MB = 1024;
 const UploadForm = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -29,7 +29,17 @@ const UploadForm = () => {
   }
 
   const handleFileChange = (e) => {
-    setSelectedFile(e.target.files[0]);
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+        alert(
+          'The selected file is greater than 1 GB. Please select a smaller file.'
+        );
+        setSelectedFile(null);
+      } else {
+        setSelectedFile(file);
+      }
+    }
   };
 
   const handleUpload = async () => {
@@ -37,7 +47,17 @@ const UploadForm = () => {
       alert('Title and Author are required fields.');
       return;
     }
+    if (!selectedFile) {
+      alert('Please select a file to upload.');
+      return;
+    }
 
+    // Check file size before starting the upload process
+    if (selectedFile.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+      // Convert MB to bytes
+      alert('The selected file is greater than the maximum limit.');
+      return;
+    }
     try {
       ////////////////////////////////////////////////////
       const formData = new FormData();
