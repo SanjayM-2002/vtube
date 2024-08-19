@@ -11,10 +11,16 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// const kafkaConfig = new KafkaConfig();
-// kafkaConfig.consume('transcode', (value) => {
-//   console.log('Got data from kafka : ', value);
-// });
+const kafkaConfig = new KafkaConfig();
+kafkaConfig.consume('transcode', (value) => {
+  // console.log('Got data from kafka : ', value);
+  const { title, url, author } = JSON.parse(value);
+  // const filename = url.split('/').pop();
+  console.log('title is: ', title);
+  console.log('url is: ', url);
+  console.log('author is: ', author);
+  s3ToS3(title, url, author);
+});
 
 app.get('/health', (req, res) => {
   res.status(200).json({ message: 'Health check success' });
@@ -22,7 +28,7 @@ app.get('/health', (req, res) => {
 
 app.get('/transcode', (req, res) => {
   try {
-    s3ToS3();
+    // s3ToS3();
     res.status(200).json({ message: 'Transcoding done' });
   } catch (err) {
     console.log('error in transcoding: ', err);

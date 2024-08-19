@@ -94,7 +94,8 @@ const multiUploadToS3 = async (req, res) => {
 const initializeUpload = async (req, res) => {
   try {
     console.log('Initialising Upload');
-    const { filename } = req.body;
+    let { filename } = req.body;
+
     console.log(filename);
 
     const s3 = new AWS.S3({
@@ -128,7 +129,7 @@ const initializeUpload = async (req, res) => {
 const uploadChunk = async (req, res) => {
   try {
     console.log('Uploading Chunk');
-    const { filename, chunkIndex, uploadId } = req.body;
+    let { filename, chunkIndex, uploadId } = req.body;
     const s3 = new AWS.S3({
       accessKeyId: process.env.ACCESS_KEY,
       secretAccessKey: process.env.ACCESS_KEY_SECRET,
@@ -157,7 +158,7 @@ const uploadChunk = async (req, res) => {
 const completeUpload = async (req, res) => {
   try {
     console.log('Completing Upload');
-    const { filename, totalChunks, uploadId, title, description, author } =
+    let { filename, totalChunks, uploadId, title, description, author } =
       req.body;
 
     const uploadedParts = [];
@@ -205,7 +206,7 @@ const completeUpload = async (req, res) => {
       author,
       uploadResult.Location
     );
-    pushVideoForEncodingToKafka(title, uploadResult.Location);
+    await pushVideoForEncodingToKafka(title, uploadResult.Location, author);
     return res.status(200).json({ message: 'Uploaded successfully!!!' });
   } catch (error) {
     console.log('Error completing upload :', error);

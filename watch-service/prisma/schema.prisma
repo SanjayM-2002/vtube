@@ -19,4 +19,5 @@ model VideoData {
   description String?
   author      String
   url         String
+  masterUrl   String?
 }

@@ -1,7 +1,7 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const path = require('path');
-
+const { PrismaClient } = require('@prisma/client');
 const cors = require('cors');
 const AWS = require('aws-sdk');
 const fs = require('fs');
@@ -9,17 +9,15 @@ const ffmpegStatic = require('ffmpeg-static');
 const ffmpeg = require('fluent-ffmpeg');
 dotenv.config();
 ffmpeg.setFfmpegPath(ffmpegStatic);
-
+const prisma = new PrismaClient();
 const s3 = new AWS.S3({
   accessKeyId: process.env.ACCESS_KEY,
   secretAccessKey: process.env.ACCESS_KEY_SECRET,
 });
 
-const mp4FileName = 'trial2.mp4';
 const bucketName = process.env.BUCKET_NAME;
-const hlsFolder = 'hls';
 
-const s3ToS3 = async () => {
+const s3ToS3 = async (title, fileUrl, author) => {
   //   console.log(
   //     process.env.ACCESS_KEY,
   //     process.env.ACCESS_KEY_SECRET,
@@ -27,6 +25,9 @@ const s3ToS3 = async () => {
   //   );
   console.log('Starting script');
   console.time('req_time');
+  const filename = fileUrl.split('/').pop();
+  const mp4FileName = filename;
+  const hlsFolder = 'hls';
   try {
     console.log('Downloading s3 mp4 file locally');
     const mp4FilePath = `${mp4FileName}`;
@@ -127,6 +128,7 @@ const s3ToS3 = async () => {
     console.log(`Deleted locally downloaded s3 mp4 file`);
 
     console.log(`Uploading media m3u8 playlists and ts segments to s3`);
+    let masterPlaylistS3Url = '';
 
     const files = fs.readdirSync(hlsFolder);
     for (const file of files) {
@@ -137,7 +139,7 @@ const s3ToS3 = async () => {
       const fileStream = fs.createReadStream(filePath);
       const uploadParams = {
         Bucket: bucketName,
-        Key: `${hlsFolder}/${file}`,
+        Key: `${author}/${title}/${hlsFolder}/${file}`,
         Body: fileStream,
         ContentType: file.endsWith('.ts')
           ? 'video/mp2t'
@@ -145,12 +147,22 @@ const s3ToS3 = async () => {
           ? 'application/x-mpegURL'
           : null,
       };
-      await s3.upload(uploadParams).promise();
+      const uploadResult = await s3.upload(uploadParams).promise();
+      if (file === masterPlaylistFileName) {
+        masterPlaylistS3Url = uploadResult.Location;
+        console.log(`Master playlist uploaded to S3: ${masterPlaylistS3Url}`);
+      }
+
       fs.unlinkSync(filePath);
     }
     console.log(
       `Uploaded media m3u8 playlists and ts segments to s3. Also deleted locally`
     );
+    const updatedVideoData = await prisma.videoData.updateMany({
+      where: { url: fileUrl },
+      data: { masterUrl: masterPlaylistS3Url },
+    });
+    console.log('updatedVideoData: ', updatedVideoData);
 
     console.log('Success. Time taken: ');
     console.timeEnd('req_time');

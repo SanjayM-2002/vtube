@@ -1,13 +1,15 @@
-const { Kafka } = require('kafkajs');
+const { Kafka, Partitioners } = require('kafkajs');
 
 class KafkaConfig {
   constructor() {
     this.kafka = new Kafka({
-      clientId: 'youtube uploader',
+      clientId: 'youtube-uploader',
       brokers: ['localhost:9092'],
     });
 
-    this.producer = this.kafka.producer();
+    this.producer = this.kafka.producer({
+      createPartitioner: Partitioners.LegacyPartitioner,
+    });
     this.consumer = this.kafka.consumer({ groupId: 'youtube-uploader' });
   }
 

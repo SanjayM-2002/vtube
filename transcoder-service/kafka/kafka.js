@@ -3,7 +3,7 @@ const { Kafka } = require('kafkajs');
 class KafkaConfig {
   constructor() {
     this.kafka = new Kafka({
-      clientId: 'youtube uploader',
+      clientId: 'youtube-uploader',
       brokers: ['localhost:9092'],
     });
 
@@ -32,6 +32,7 @@ class KafkaConfig {
       await this.consumer.subscribe({ topic: topic, fromBeginning: true });
       await this.consumer.run({
         eachMessage: async ({ topic, partition, message }) => {
+          // console.log(`Received message: ${message.value.toString()}`);
           const value = message.value.toString();
           callback(value);
         },
