@@ -12,12 +12,12 @@ const NavBar = () => {
   };
   return (
     <div>
-      <nav class='bg-white border-gray-200 dark:bg-gray-900'>
-        <div class='max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4'>
-          <span class='self-center text-2xl font-semibold whitespace-nowrap dark:text-white'>
-            Educosys YouTube
+      <nav className='bg-white border-gray-200 dark:bg-gray-900'>
+        <div className='max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4'>
+          <span className='self-center text-2xl font-semibold whitespace-nowrap dark:text-white'>
+            VTube
           </span>
-          <div class='hidden w-full md:block md:w-auto' id='navbar-default'>
+          <div className='hidden w-full md:block md:w-auto' id='navbar-default'>
             {data ? (
               <div className='flex'>
                 <button
@@ -37,7 +37,7 @@ const NavBar = () => {
                 <span className='my-5'>Hello {data.user.name}</span>
                 <div className='m-3'>
                   <img
-                    class='w-10 h-10 rounded-full'
+                    className='w-10 h-10 rounded-full'
                     src={data.user.image}
                     alt=''
                   />

@@ -1,45 +1,62 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-
+import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 
 const UploadForm = () => {
+  const { data } = useSession();
   const [selectedFile, setSelectedFile] = useState(null);
-  const UPLOAD_URL = process.env.NEXT_PUBLIC_UPLOAD_URL;
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [author, setAuthor] = useState('');
+  const UPLOAD_BASE_URL = process.env.NEXT_PUBLIC_UPLOAD_URL;
   const handleFileChange = (e) => {
     setSelectedFile(e.target.files[0]);
   };
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    handleUpload(selectedFile);
-  };
-  const handleUpload = async (file) => {
-    try {
-      const chunkSize = 100 * 1024 * 1024; // 100 MB chunks
-      const totalChunks = Math.ceil(file.size / chunkSize);
-      console.log('filesize', file.size);
-      console.log('chunksize', chunkSize);
-      console.log('totalchunks', totalChunks);
 
-      // const formData = new FormData();
-      // formData.append('file', file);
+  const handleUpload = async () => {
+    if (!title || !author) {
+      alert('Title and Author are required fields.');
+      return;
+    }
+
+    try {
+      ////////////////////////////////////////////////////
+      const formData = new FormData();
+      formData.append('filename', selectedFile.name);
+      const initializeRes = await axios.post(
+        `${UPLOAD_BASE_URL}/uploads/initialize`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+      const { uploadId } = initializeRes.data;
+      console.log('Upload id is ', uploadId);
+
+      ////////////////////////////////////////////////////
+
+      const chunkSize = 5 * 1024 * 1024; // 5 MB chunks
+      const totalChunks = Math.ceil(selectedFile.size / chunkSize);
 
       let start = 0;
       const uploadPromises = [];
 
       for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-        const chunk = file.slice(start, start + chunkSize);
+        const chunk = selectedFile.slice(start, start + chunkSize);
         start += chunkSize;
         const chunkFormData = new FormData();
-        chunkFormData.append('filename', file.name);
+        chunkFormData.append('filename', selectedFile.name);
         chunkFormData.append('chunk', chunk);
         chunkFormData.append('totalChunks', totalChunks);
         chunkFormData.append('chunkIndex', chunkIndex);
+        chunkFormData.append('uploadId', uploadId);
 
-        console.log('uploading chunk: ', chunkIndex + 1, 'of: ', totalChunks);
-        const res = await axios.post(
-          `${UPLOAD_URL}/uploads/upload1`,
+        const uploadPromise = axios.post(
+          `${UPLOAD_BASE_URL}/uploads`,
           chunkFormData,
           {
             headers: {
@@ -47,33 +64,78 @@ const UploadForm = () => {
             },
           }
         );
-        console.log('response data is: ', res.data);
+        uploadPromises.push(uploadPromise);
       }
 
-      const res = await axios.post(`${UPLOAD_URL}/uploads/upload1`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      console.log('response data is: ', res.data);
+      await Promise.all(uploadPromises);
+
+      ////////////////////////////////////////////////////
+
+      const completeRes = await axios.post(
+        `${UPLOAD_BASE_URL}/uploads/complete`,
+        {
+          filename: selectedFile.name,
+          totalChunks: totalChunks,
+          uploadId: uploadId,
+          title: title,
+          description: description,
+          author: author,
+        }
+      );
+
+      console.log(completeRes.data);
     } catch (error) {
       console.error('Error uploading file:', error);
     }
   };
 
   return (
-    <div className='container justify-center mx-auto max-w-lg p-10'>
-      <div>Upload a image file {UPLOAD_URL.toLowerCase()}</div>
-      <form onSubmit={handleSubmit}>
-        <input
-          type='file'
-          name='file'
-          onChange={handleFileChange}
-          className='px-3 py-2 w-full border rounded-md focus:outline-none focus:border-blue-500'
-        />
-
+    <div className='container mx-auto max-w-lg p-10'>
+      {/* <div>{UPLOAD_BASE_URL}</div> */}
+      <form encType='multipart/form-data'>
+        <div className='mb-4'>
+          <input
+            type='text'
+            name='title'
+            placeholder='Title'
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+            className='px-3 py-2 w-full border rounded-md focus:outline-none focus:border-blue-500'
+          />
+        </div>
+        <div className='mb-4'>
+          <input
+            type='text'
+            name='description'
+            placeholder='Description'
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className='px-3 py-2 w-full border rounded-md focus:outline-none focus:border-blue-500'
+          />
+        </div>
+        <div className='mb-4'>
+          <input
+            type='text'
+            name='author'
+            placeholder='Author'
+            value={author}
+            onChange={(e) => setAuthor(e.target.value)}
+            required
+            className='px-3 py-2 w-full border rounded-md focus:outline-none focus:border-blue-500'
+          />
+        </div>
+        <div className='mb-4'>
+          <input
+            type='file'
+            name='file'
+            onChange={handleFileChange}
+            className='px-3 py-2 w-full border rounded-md focus:outline-none focus:border-blue-500'
+          />
+        </div>
         <button
-          type='submit'
+          type='button'
+          onClick={handleUpload}
           className='text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center'
         >
           Upload

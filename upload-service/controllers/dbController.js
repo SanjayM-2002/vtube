@@ -1,8 +1,8 @@
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
-const addVideoDetailsToDb = async (req, res) => {
-  const { title, description, author, url } = req.body;
+const addVideoDetailsToDb = async (title, description, author, url) => {
+  console.log('add video details to db');
   try {
     const newVideo = await prisma.videoData.create({
       data: {
@@ -12,12 +12,11 @@ const addVideoDetailsToDb = async (req, res) => {
         url: url,
       },
     });
-    res.status(201).json(newVideo);
+    console.log('video details: ', newVideo);
+    return newVideo;
   } catch (err) {
     console.error('Error adding video details:', err);
-    res
-      .status(500)
-      .json({ error: 'Failed to add video details to the database' });
+    return;
   }
 };
 
