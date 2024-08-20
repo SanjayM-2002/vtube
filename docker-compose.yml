@@ -13,7 +13,7 @@ services:
     build:
       context: ./transcoder-service
     ports:
-      - '5001:5001'
+      - '5002:5002'
     depends_on:
       - kafka
 
@@ -21,7 +21,7 @@ services:
     build:
       context: ./watch-service
     ports:
-      - '5002:5002'
+      - '5001:5001'
     depends_on:
       - kafka
 
@@ -59,6 +59,7 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_BROKER_ID: 2
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_HEAP_OPTS: '-Xmx256M -Xms128M'
     ports:
       - 9092:9092
 
