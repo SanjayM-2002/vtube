@@ -4,7 +4,7 @@ class KafkaConfig {
   constructor() {
     this.kafka = new Kafka({
       clientId: 'youtube-uploader',
-      brokers: ['kafka:9092'],
+      brokers: ['localhost:9092'],
     });
 
     this.producer = this.kafka.producer({
